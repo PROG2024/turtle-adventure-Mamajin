@@ -4,6 +4,9 @@ adventure game.
 """
 from turtle import RawTurtle
 from gamelib import Game, GameElement
+import random as rd
+import time
+import math
 
 
 class TurtleGameElement(GameElement):
@@ -241,6 +244,13 @@ class Enemy(TurtleGameElement):
             (self.y - self.size/2 < self.game.player.y < self.y + self.size/2)
         )
 
+    def hits_wall(self):
+        """
+        Check whether the enemy hit a wall
+        """
+        return self.x < 10 or self.x > 790 or self.y < 10 or self.y > 490
+
+
 
 # TODO
 # * Define your enemy classes
@@ -258,18 +268,35 @@ class DemoEnemy(Enemy):
                  size: int,
                  color: str):
         super().__init__(game, size, color)
+        self.__id = None
+        self.angle = rd.uniform(0, 2 * math.pi)  # initial random direction
 
     def create(self) -> None:
-        pass
+        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill='red')
 
     def update(self) -> None:
-        pass
+        speed = 3
+        # Generate a random change in angle
+        turn = rd.uniform(-0.1, 0.1)
+        # Update angle
+        self.angle += turn
+        # Calculate new position based on angle
+        self.x += speed * math.cos(self.angle)
+        self.y += speed * math.sin(self.angle)
+        if self.hits_player():
+            self.game.game_over_lose()
+        if self.hits_wall():
+            self.delete()
 
     def render(self) -> None:
-        pass
+        self.canvas.coords(self.__id,
+                           self.x - self.size/2,
+                           self.y - self.size/2,
+                           self.x + self.size/2,
+                           self.y + self.size/2)
 
     def delete(self) -> None:
-        pass
+        self.canvas.delete(self.__id)
 
 
 # TODO
@@ -291,6 +318,8 @@ class EnemyGenerator:
         self.__level: int = level
 
         # example
+        if self.__game.is_started:
+            print("running")
         self.__game.after(100, self.create_enemy)
 
     @property
@@ -312,8 +341,8 @@ class EnemyGenerator:
         Create a new enemy, possibly based on the game level
         """
         new_enemy = DemoEnemy(self.__game, 20, "red")
-        new_enemy.x = 100
-        new_enemy.y = 100
+        new_enemy.x = rd.randint(0, 800)
+        new_enemy.y = rd.randint(0, 500)
         self.game.add_element(new_enemy)
 
 
